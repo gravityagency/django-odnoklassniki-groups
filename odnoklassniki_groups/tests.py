@@ -6,30 +6,30 @@ from factories import GroupFactory
 import simplejson as json
 
 GROUP_ID = 47241470410797
-GROUP_NAME = 'Кока-Кола'
+GROUP_NAME = u'Кока-Кола'
 
 class OdnoklassnikiGroupsTest(TestCase):
 
-#     def test_refresh_group(self):
-#
-#         instance = Group.remote.fetch(ids=[GROUP_ID])[0]
-#         self.assertEqual(instance.screen_name, GROUP_SCREEN_NAME)
-#
-#         instance.screen_name = 'temp'
-#         instance.save()
-#         self.assertEqual(instance.screen_name, 'temp')
-#
-#         instance.refresh()
-#         self.assertEqual(instance.screen_name, GROUP_SCREEN_NAME)
-#
-#     def test_fetch_groups(self):
-#
-#         self.assertEqual(Group.objects.count(), 0)
-#         instance = Group.remote.fetch(ids=[GROUP_ID])[0]
-#
-#         self.assertEqual(Group.objects.count(), 1)
-#         self.assertEqual(instance.remote_id, GROUP_ID)
-#         self.assertEqual(instance.screen_name, GROUP_SCREEN_NAME)
+    def test_refresh_group(self):
+
+        instance = Group.remote.fetch(ids=[GROUP_ID])[0]
+        self.assertEqual(instance.name, GROUP_NAME)
+
+        instance.name = 'temp'
+        instance.save()
+        self.assertEqual(instance.name, 'temp')
+
+        instance.refresh()
+        self.assertEqual(instance.name, GROUP_NAME)
+
+    def test_fetch_groups(self):
+
+        self.assertEqual(Group.objects.count(), 0)
+        instance = Group.remote.fetch(ids=[GROUP_ID])[0]
+
+        self.assertEqual(Group.objects.count(), 1)
+        self.assertEqual(instance.id, GROUP_ID)
+        self.assertEqual(instance.name, GROUP_NAME)
 
     def test_parse_group(self):
 
@@ -42,7 +42,7 @@ class OdnoklassnikiGroupsTest(TestCase):
                     "shop_visible_admin": false,
                     "shop_visible_public": false,
                     "members_count": 12463
-                }'''
+                }]'''
         instance = Group()
         instance.parse(json.loads(response)[0])
         instance.save()

@@ -14,40 +14,31 @@ import simplejson as json
 
 log = logging.getLogger('odnoklassniki_group')
 
-# GROUP_TYPE_CHOICES = (
-#     ('group',  u'Группа'),
-#     ('page',  u'Страница'),
-#     ('event',  u'Событие'),
-# )
-
-# class ParseGroupsMixin(object):
-#     '''
-#     Manager mixin for parsing response with extra cache 'groups'. Used in odnoklassniki_wall applications
-#     '''
-#     def parse_response_groups(self, response_list):
-#         users = Group.remote.parse_response_list(response_list.get('groups', []), {'fetched': datetime.now()})
-#         instances = []
-#         for instance in users:
-#             instances += [Group.remote.get_or_create_from_instance(instance)]
-#         return instances
 
 class GroupRemoteManager(OdnoklassnikiManager):
-    pass
 
-#     def api_call(self, *args, **kwargs):
-#         if 'ids' in kwargs:
-#             kwargs['gids'] = ','.join(map(lambda i: str(i), kwargs.pop('ids')))
-#         return super(GroupRemoteManager, self).api_call(*args, **kwargs)
-#
-#     def search(self, q, offset=None, count=None):
-#
-#         kwargs = {'q': q}
-#         if offset:
-#             kwargs.update(offset=offset)
-#         if count:
-#             kwargs.update(count=count)
-#
-#         return self.get(method='search', **kwargs)
+    fields = [
+        'uid',
+        'name',
+        'description',
+        'shortname',
+        'pic_avatar',
+        'photo_id',
+        'shop_visible_admin',
+        'shop_visible_public',
+        'members_count',
+        'premium',
+        'private',
+#        'admin_id'
+    ]
+
+    def fetch(self, *args, **kwargs):
+        if 'ids' in kwargs:
+            kwargs['uids'] = ','.join(map(lambda i: str(i), kwargs.pop('ids')))
+        if 'fields' not in kwargs:
+            kwargs['fields'] = ','.join(self.fields)
+        return super(GroupRemoteManager, self).fetch(*args, **kwargs)
+
 
 class Group(OdnoklassnikiPKModel):
     class Meta:
@@ -65,7 +56,7 @@ class Group(OdnoklassnikiPKModel):
 
     members_count = models.PositiveIntegerField()
 
-    photo_id = models.PositiveIntegerField()
+    photo_id = models.PositiveIntegerField(null=True)
     picavatar = models.URLField()
 
     premium = models.NullBooleanField()
@@ -73,7 +64,7 @@ class Group(OdnoklassnikiPKModel):
     shop_visible_admin = models.NullBooleanField()
     shop_visible_public = models.NullBooleanField()
 
-    remote = GroupRemoteManager(remote_pk=('remote_id',), methods={
+    remote = GroupRemoteManager(methods={
         'get': 'getInfo',
 #        'search': 'search',
     })
@@ -84,77 +75,6 @@ class Group(OdnoklassnikiPKModel):
     def remote_link(self):
         return 'http://vk.com/club%d' % self.remote_id
 
-#     @property
-#     def refresh_kwargs(self):
-#         return {'ids': [self.remote_id]}
-#
-#     @property
-#     def wall_comments(self):
-#         if 'odnoklassniki_wall' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_wall' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_wall.models import Comment
-#         # TODO: improve schema and queries with using owner_id field
-#         return Comment.objects.filter(remote_id__startswith='-%s_' % self.remote_id)
-#
-#     @property
-#     def topics_comments(self):
-#         if 'odnoklassniki_board' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_board' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_board.models import Comment
-#         # TODO: improve schema and queries with using owner_id field
-#         return Comment.objects.filter(remote_id__startswith='-%s_' % self.remote_id)
-#
-#     @property
-#     def photos(self):
-#         if 'odnoklassniki_photos' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_photos' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_photos.models import Photo
-#         # TODO: improve schema and queries with using owner_id field
-#         return Photo.objects.filter(remote_id__startswith='-%s_' % self.remote_id)
-#
-#     def fetch_posts(self, *args, **kwargs):
-#         if 'odnoklassniki_wall' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_wall' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_wall.models import Post
-#         return Post.remote.fetch_wall(owner=self, *args, **kwargs)
-#
-#     def fetch_albums(self, *args, **kwargs):
-#         if 'odnoklassniki_photos' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_photos' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_photos.models import Album
-#         return Album.remote.fetch(group=self, *args, **kwargs)
-#
-#     def fetch_topics(self, *args, **kwargs):
-#         if 'odnoklassniki_board' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_board' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_board.models import Topic
-#         return Topic.remote.fetch(group=self, *args, **kwargs)
-#
-#     def fetch_statistic(self, *args, **kwargs):
-#         if 'odnoklassniki_groups_statistic' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_groups_statistic' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_groups_statistic.models import fetch_statistic_for_group
-#         return fetch_statistic_for_group(group=self, *args, **kwargs)
-#
-#     def update_users(self, *args, **kwargs):
-#         if 'odnoklassniki_groups_migration' not in settings.INSTALLED_APPS:
-#             raise ImproperlyConfigured("Application 'odnoklassniki_groups_migration' not in INSTALLED_APPS")
-#
-#         from odnoklassniki_groups_migration.models import GroupMigration
-#         return GroupMigration.objects.update_for_group(group=self, *args, **kwargs)
-#
-# if 'odnoklassniki_users' in settings.INSTALLED_APPS:
-#     from odnoklassniki_users.models import User
-#     Group.add_to_class('users', models.ManyToManyField(User))
-# else:
-#     @property
-#     def users(self):
-#         raise ImproperlyConfigured("Application 'odnoklassniki_users' not in INSTALLED_APPS")
-#     Group.add_to_class('users', users)
+    @property
+    def refresh_kwargs(self):
+        return {'ids': [self.pk]}
