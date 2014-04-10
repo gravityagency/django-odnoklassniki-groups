@@ -1,11 +1,22 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.conf import settings
 from django.utils.translation import ugettext as _
+from django.core.exceptions import ImproperlyConfigured
 from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
 from odnoklassniki_api.decorators import fetch_all, atomic
 import logging
 
 log = logging.getLogger('odnoklassniki_group')
+
+if 'odnoklassniki_users' in settings.INSTALLED_APPS:
+    from odnoklassniki_users.models import User
+    from m2m_history.fields import ManyToManyHistoryField
+    users = ManyToManyHistoryField(User)
+else:
+    @property
+    def users(self):
+        raise ImproperlyConfigured("Application 'odnoklassniki_users' not in INSTALLED_APPS")
 
 
 class GroupRemoteManager(OdnoklassnikiManager):
@@ -71,6 +82,8 @@ class Group(OdnoklassnikiPKModel):
     shop_visible_admin = models.NullBooleanField()
     shop_visible_public = models.NullBooleanField()
 
+    users = users
+
     remote = GroupRemoteManager(methods={
         'get': 'getInfo',
         'get_members': 'getMembers',
@@ -88,3 +101,13 @@ class Group(OdnoklassnikiPKModel):
         if 'picAvatar' in response:
             response['pic_avatar'] = response.pop('picAvatar')
         super(Group, self).parse(response)
+
+    @atomic
+    def update_users(self, **kwargs):
+        if 'odnoklassniki_users' not in settings.INSTALLED_APPS:
+            raise ImproperlyConfigured("Application 'odnoklassniki_users' not in INSTALLED_APPS")
+
+        ids = Group.remote.get_members_ids(group=self)
+        self.users = User.remote.fetch(ids=ids)
+
+        return self.users

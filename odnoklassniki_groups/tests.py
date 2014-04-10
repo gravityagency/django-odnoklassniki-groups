@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.test import TestCase
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from models import Group
 from factories import GroupFactory
@@ -58,6 +59,15 @@ class OdnoklassnikiGroupsTest(TestCase):
         self.assertEqual(instance.shop_visible_public, False)
         self.assertEqual(instance.members_count, 12463)
 
+    def test_raise_users_exception(self):
+
+        group = GroupFactory(id=GROUP_ID)
+        if 'odnoklassniki_users' in settings.INSTALLED_APPS:
+            group.users
+        else:
+            with self.assertRaises(ImproperlyConfigured):
+                group.users
+
     def test_get_group_members_ids(self):
 
         group = GroupFactory(id=GROUP_OPEN_ID)
@@ -65,3 +75,19 @@ class OdnoklassnikiGroupsTest(TestCase):
 
         self.assertTrue(group.members_count > 1100)
         self.assertEqual(group.members_count, len(ids))
+
+    if 'odnoklassniki_users' in settings.INSTALLED_APPS:
+
+        def test_fetch_group_members(self):
+            from odnoklassniki_users.models import User
+
+            group = GroupFactory(id=GROUP_OPEN_ID)
+
+            self.assertEqual(User.objects.count(), 0)
+
+            users = group.update_users()
+
+            self.assertTrue(group.members_count > 1100)
+            self.assertEqual(group.members_count, User.objects.count())
+            self.assertEqual(group.members_count, users.count())
+            self.assertEqual(group.members_count, group.users.count())
