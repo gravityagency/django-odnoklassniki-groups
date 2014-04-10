@@ -1,5 +1,5 @@
 Django Odnoklassniki Groups
-=======================
+===========================
 
 [![PyPI version](https://badge.fury.io/py/django-odnoklassniki-groups.png)](http://badge.fury.io/py/django-odnoklassniki-groups) [![Build Status](https://travis-ci.org/ramusus/django-odnoklassniki-groups.png?branch=master)](https://travis-ci.org/ramusus/django-odnoklassniki-groups) [![Coverage Status](https://coveralls.io/repos/ramusus/django-odnoklassniki-groups/badge.png?branch=master)](https://coveralls.io/r/ramusus/django-odnoklassniki-groups)
 

@@ -1,21 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-try:
-    from django.db.transaction import atomic
-except ImportError:
-    from django.db.transaction import commit_on_success as atomic
-from django.db.models.query import QuerySet
 from django.utils.translation import ugettext as _
-from django.core.exceptions import MultipleObjectsReturned, ImproperlyConfigured
-from django.conf import settings
-from odnoklassniki_api import fields
-from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiModel, OdnoklassnikiPKModel, OdnoklassnikiDeniedAccessError, OdnoklassnikiContentError
-from odnoklassniki_api.decorators import fetch_all
-from datetime import datetime
-from urllib import unquote
+from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
+from odnoklassniki_api.decorators import fetch_all, atomic
 import logging
-import re
-import simplejson as json
 
 log = logging.getLogger('odnoklassniki_group')
 
@@ -58,6 +46,7 @@ class GroupRemoteManager(OdnoklassnikiManager):
         ids = [m['userId'] for m in response['members']]
         return ids, response
 
+
 class Group(OdnoklassnikiPKModel):
     class Meta:
         verbose_name = _('Odnoklassniki group')
@@ -74,8 +63,8 @@ class Group(OdnoklassnikiPKModel):
 
     members_count = models.PositiveIntegerField()
 
-    photo_id = models.PositiveIntegerField(null=True)
-    picavatar = models.URLField()
+    photo_id = models.BigIntegerField(null=True)
+    pic_avatar = models.URLField()
 
     premium = models.NullBooleanField()
     private = models.NullBooleanField()
@@ -90,9 +79,12 @@ class Group(OdnoklassnikiPKModel):
     def __unicode__(self):
         return self.name
 
-#     def remote_link(self):
-#         return 'http://vk.com/club%d' % self.remote_id
-
     @property
     def refresh_kwargs(self):
         return {'ids': [self.pk]}
+
+    def parse(self, response):
+        # avatar
+        if 'picAvatar' in response:
+            response['pic_avatar'] = response.pop('picAvatar')
+        super(Group, self).parse(response)

@@ -53,7 +53,7 @@ class OdnoklassnikiGroupsTest(TestCase):
         self.assertEqual(instance.name, u'Группа для тестирования нового сервиса')
         self.assertEqual(instance.description, u'Группа для тестирования нового сервиса')
         self.assertEqual(instance.shortname, 'newservicetesting')
-        self.assertEqual(instance.picavatar, 'http://groupava2.odnoklassniki.ru/getImage?photoId=476991575825&photoType=4')
+        self.assertEqual(instance.pic_avatar, 'http://groupava2.odnoklassniki.ru/getImage?photoId=476991575825&photoType=4')
         self.assertEqual(instance.shop_visible_admin, False)
         self.assertEqual(instance.shop_visible_public, False)
         self.assertEqual(instance.members_count, 12463)
