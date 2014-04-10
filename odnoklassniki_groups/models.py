@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+try:
+    from django.db.transaction import atomic
+except ImportError:
+    from django.db.transaction import commit_on_success as atomic
 from django.db.models.query import QuerySet
 from django.utils.translation import ugettext as _
 from django.core.exceptions import MultipleObjectsReturned, ImproperlyConfigured
 from django.conf import settings
 from odnoklassniki_api import fields
 from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiModel, OdnoklassnikiPKModel, OdnoklassnikiDeniedAccessError, OdnoklassnikiContentError
+from odnoklassniki_api.decorators import fetch_all
 from datetime import datetime
 from urllib import unquote
 import logging
@@ -29,16 +34,29 @@ class GroupRemoteManager(OdnoklassnikiManager):
         'members_count',
         'premium',
         'private',
-#        'admin_id'
+#        'admin_id', # with this field strange error
     ]
 
-    def fetch(self, *args, **kwargs):
-        if 'ids' in kwargs:
-            kwargs['uids'] = ','.join(map(lambda i: str(i), kwargs.pop('ids')))
+    @atomic
+    def fetch(self, ids, **kwargs):
+        kwargs['uids'] = ','.join(map(lambda i: str(i), ids))
         if 'fields' not in kwargs:
             kwargs['fields'] = ','.join(self.fields)
-        return super(GroupRemoteManager, self).fetch(*args, **kwargs)
+        return super(GroupRemoteManager, self).fetch(**kwargs)
 
+    def update_members_count(self, instances, group, *args, **kwargs):
+        group.members_count = len(instances)
+        group.save()
+        return instances
+
+    @atomic
+    @fetch_all(return_all=update_members_count, always_all=True)
+    def get_members_ids(self, group, count=1000, **kwargs):
+        kwargs['uid'] = group.pk
+        kwargs['count'] = count
+        response = self.api_call('get_members', **kwargs)
+        ids = [m['userId'] for m in response['members']]
+        return ids, response
 
 class Group(OdnoklassnikiPKModel):
     class Meta:
@@ -66,14 +84,14 @@ class Group(OdnoklassnikiPKModel):
 
     remote = GroupRemoteManager(methods={
         'get': 'getInfo',
-#        'search': 'search',
+        'get_members': 'getMembers',
     })
 
     def __unicode__(self):
         return self.name
 
-    def remote_link(self):
-        return 'http://vk.com/club%d' % self.remote_id
+#     def remote_link(self):
+#         return 'http://vk.com/club%d' % self.remote_id
 
     @property
     def refresh_kwargs(self):

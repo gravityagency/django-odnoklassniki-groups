@@ -14,7 +14,7 @@ setup(
     include_package_data=True,
     zip_safe=False, # because we're including media that Django needs
     install_requires=[
-        'django-odnoklassniki-api>=0.0.1',
+        'django-odnoklassniki-api>=0.0.3',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

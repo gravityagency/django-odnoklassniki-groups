@@ -8,6 +8,8 @@ import simplejson as json
 GROUP_ID = 47241470410797
 GROUP_NAME = u'Кока-Кола'
 
+GROUP_OPEN_ID = 53038939046008
+
 class OdnoklassnikiGroupsTest(TestCase):
 
     def test_refresh_group(self):
@@ -55,3 +57,11 @@ class OdnoklassnikiGroupsTest(TestCase):
         self.assertEqual(instance.shop_visible_admin, False)
         self.assertEqual(instance.shop_visible_public, False)
         self.assertEqual(instance.members_count, 12463)
+
+    def test_get_group_members_ids(self):
+
+        group = GroupFactory(id=GROUP_OPEN_ID)
+        ids = Group.remote.get_members_ids(group=group)
+
+        self.assertTrue(group.members_count > 1100)
+        self.assertEqual(group.members_count, len(ids))
