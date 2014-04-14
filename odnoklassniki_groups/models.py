@@ -6,6 +6,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.contrib.contenttypes import generic
 from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
 from odnoklassniki_api.decorators import fetch_all, atomic
+from odnoklassniki_api.fields import JSONField
 import logging
 
 log = logging.getLogger('odnoklassniki_groups')
@@ -51,12 +52,18 @@ class Group(OdnoklassnikiPKModel):
     members_count = models.PositiveIntegerField(null=True)
 
     photo_id = models.BigIntegerField(null=True)
-    pic_avatar = models.URLField()
+
+    # this fields available from entities of discussions
+    pic128x128 = models.URLField()
+    pic50x50 = models.URLField()
+    pic640x480 = models.URLField()
 
     premium = models.NullBooleanField()
     private = models.NullBooleanField()
     shop_visible_admin = models.NullBooleanField()
     shop_visible_public = models.NullBooleanField()
+
+    attrs = JSONField(null=True)
 
     remote = GroupRemoteManager(methods={
         'get': 'getInfo',
@@ -71,9 +78,15 @@ class Group(OdnoklassnikiPKModel):
         return {'ids': [self.pk]}
 
     def parse(self, response):
-        # avatar
-        if 'picAvatar' in response:
-            response['pic_avatar'] = response.pop('picAvatar')
+        # in entity of discussion
+        if 'main_photo' in response:
+            if 'id' in response['main_photo']:
+                del response['main_photo']['id']
+            response.update(response.pop('main_photo'))
+
+        # pop avatar, because self.pic50x50 the same
+        response.pop('picAvatar', None)
+
         super(Group, self).parse(response)
 
     @atomic
@@ -84,31 +97,37 @@ class Group(OdnoklassnikiPKModel):
         ids = Group.remote.get_members_ids(group=self)
         self.users = User.remote.fetch(ids=ids)
 
-        return self.users
+        return self.users.all()
 
 '''
 Fields, dependent on other applications
 '''
+def get_improperly_configured_field(app_name, decorate_property=False):
+    def field(self):
+        raise ImproperlyConfigured("Application '%s' not in INSTALLED_APPS" % app_name)
+    if decorate_property:
+        field = property(field)
+    return field
 
 if 'odnoklassniki_users' in settings.INSTALLED_APPS:
     from odnoklassniki_users.models import User
     from m2m_history.fields import ManyToManyHistoryField
     users = ManyToManyHistoryField(User)
 else:
-    @property
-    def users(self):
-        raise ImproperlyConfigured("Application 'odnoklassniki_users' not in INSTALLED_APPS")
+    users = get_improperly_configured_field('odnoklassniki_users', True)
 
 if 'odnoklassniki_discussions' in settings.INSTALLED_APPS:
     from odnoklassniki_discussions.models import Discussion
     discussions = generic.GenericRelation(Discussion, content_type_field='owner_content_type', object_id_field='owner_id')
     discussions_count = models.PositiveIntegerField(null=True)
+    def fetch_discussions(self, **kwargs):
+        return Discussion.remote.fetch(group=self, **kwargs)
 else:
-    @property
-    def discussions(self):
-        raise ImproperlyConfigured("Application 'odnoklassniki_discussions' not in INSTALLED_APPS")
+    discussions = get_improperly_configured_field('odnoklassniki_discussions', True)
     discussions_count = discussions
+    fetch_discussions = discussions
 
 Group.add_to_class('users', users)
 Group.add_to_class('discussions', discussions)
 Group.add_to_class('discussions_count', discussions_count)
+Group.add_to_class('fetch_discussions', fetch_discussions)
