@@ -13,6 +13,24 @@ GROUP_OPEN_ID = 53038939046008
 
 class OdnoklassnikiGroupsTest(TestCase):
 
+    def test_get_by_url(self):
+
+        user = GroupFactory(id=GROUP_OPEN_ID)
+
+        self.assertEqual(Group.objects.count(), 1)
+
+        urls = (
+            'http://ok.ru/apiok/',
+            'http://ok.ru/apiok',
+            'http://odnoklassniki.ru/apiok',
+            'http://www.odnoklassniki.ru/apiok',
+            'http://www.odnoklassniki.ru/group/53038939046008',
+        )
+
+        for url in urls:
+            instance = Group.remote.get_by_url(url)
+            self.assertEqual(instance.id, GROUP_OPEN_ID)
+
     def test_refresh_group(self):
 
         instance = Group.remote.fetch(ids=[GROUP_ID])[0]

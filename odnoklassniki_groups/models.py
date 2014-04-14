@@ -40,7 +40,7 @@ class Group(OdnoklassnikiPKModel):
         verbose_name = _('Odnoklassniki group')
         verbose_name_plural = _('Odnoklassniki groups')
 
-#     resolve_screen_name_type = 'group'
+    resolve_screen_name_type = 'GROUP'
     methods_namespace = 'group'
     remote_pk_field = 'uid'
     slug_prefix = 'group'
