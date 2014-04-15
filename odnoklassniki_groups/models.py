@@ -5,7 +5,7 @@ from django.utils.translation import ugettext as _
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.contenttypes import generic
 from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
-from odnoklassniki_api.decorators import fetch_all, atomic
+from odnoklassniki_api.decorators import fetch_all, atomic, opt_generator
 from odnoklassniki_api.fields import JSONField
 import logging
 
@@ -89,16 +89,6 @@ class Group(OdnoklassnikiPKModel):
 
         super(Group, self).parse(response)
 
-    @atomic
-    def update_users(self, **kwargs):
-        if 'odnoklassniki_users' not in settings.INSTALLED_APPS:
-            raise ImproperlyConfigured("Application 'odnoklassniki_users' not in INSTALLED_APPS")
-
-        ids = Group.remote.get_members_ids(group=self)
-        self.users = User.remote.fetch(ids=ids)
-
-        return self.users.all()
-
 '''
 Fields, dependent on other applications
 '''
@@ -113,13 +103,22 @@ if 'odnoklassniki_users' in settings.INSTALLED_APPS:
     from odnoklassniki_users.models import User
     from m2m_history.fields import ManyToManyHistoryField
     users = ManyToManyHistoryField(User)
+
+    @atomic
+    @opt_generator
+    def update_users(self, **kwargs):
+        ids = self.__class__.remote.get_members_ids(group=self)
+        self.users = User.remote.fetch(ids=ids)
+        return self.users.all()
 else:
     users = get_improperly_configured_field('odnoklassniki_users', True)
+    update_users = users
 
 if 'odnoklassniki_discussions' in settings.INSTALLED_APPS:
     from odnoklassniki_discussions.models import Discussion
     discussions = generic.GenericRelation(Discussion, content_type_field='owner_content_type', object_id_field='owner_id')
     discussions_count = models.PositiveIntegerField(null=True)
+
     def fetch_discussions(self, **kwargs):
         return Discussion.remote.fetch(group=self, **kwargs)
 else:
@@ -128,6 +127,7 @@ else:
     fetch_discussions = discussions
 
 Group.add_to_class('users', users)
+Group.add_to_class('update_users', update_users)
 Group.add_to_class('discussions', discussions)
 Group.add_to_class('discussions_count', discussions_count)
 Group.add_to_class('fetch_discussions', fetch_discussions)
