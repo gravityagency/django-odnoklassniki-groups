@@ -80,8 +80,7 @@ class Group(OdnoklassnikiPKModel):
     def parse(self, response):
         # in entity of discussion
         if 'main_photo' in response:
-            if 'id' in response['main_photo']:
-                del response['main_photo']['id']
+            response['main_photo'].pop('id', None)
             response.update(response.pop('main_photo'))
 
         # pop avatar, because self.pic50x50 the same
