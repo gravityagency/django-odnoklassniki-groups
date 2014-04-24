@@ -101,11 +101,12 @@ def get_improperly_configured_field(app_name, decorate_property=False):
 if 'odnoklassniki_users' in settings.INSTALLED_APPS:
     from odnoklassniki_users.models import User
     from m2m_history.fields import ManyToManyHistoryField
-    users = ManyToManyHistoryField(User)
+    users = ManyToManyHistoryField(User, cache=True)
 
     @atomic
     @opt_generator
     def update_users(self, **kwargs):
+        # TODO: at first updating don't set time_from value
         ids = self.__class__.remote.get_members_ids(group=self)
         self.users = User.remote.fetch(ids=ids)
         return self.users.all()
