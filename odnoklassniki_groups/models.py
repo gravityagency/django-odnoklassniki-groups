@@ -108,12 +108,12 @@ if 'odnoklassniki_users' in settings.INSTALLED_APPS:
     def update_users(self, **kwargs):
         ids = self.__class__.remote.get_members_ids(group=self)
 
-        initial = self.users.count() == 0
+#        initial = self.users.count() == 0
 
         self.users = User.remote.fetch(ids=ids)
 
-        if initial:
-            self.users.get_query_set_through().update(time_from=None)
+#         if initial:
+#             self.users.get_query_set_through().update(time_from=None)
 
         return self.users.all()
 else:
