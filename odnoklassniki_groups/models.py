@@ -106,9 +106,15 @@ if 'odnoklassniki_users' in settings.INSTALLED_APPS:
     @atomic
     @opt_generator
     def update_users(self, **kwargs):
-        # TODO: at first updating don't set time_from value
         ids = self.__class__.remote.get_members_ids(group=self)
+
+#        initial = self.users.count() == 0
+
         self.users = User.remote.fetch(ids=ids)
+
+#         if initial:
+#             self.users.get_query_set_through().update(time_from=None)
+
         return self.users.all()
 else:
     users = get_improperly_configured_field('odnoklassniki_users', True)
