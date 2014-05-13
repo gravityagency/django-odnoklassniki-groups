@@ -32,7 +32,7 @@ Django Odnoklassniki Groups
 --------------------
 
 * [group.getInfo](http://apiok.ru/wiki/display/api/group.getInfo) – получение информации о группах;
-* [group.getInfo](http://apiok.ru/wiki/display/api/group.getMembers) – получение списка пользователей группы;
+* [group.getMembers](http://apiok.ru/wiki/display/api/group.getMembers) – получение списка пользователей группы;
 
 Примеры использования
 ---------------------

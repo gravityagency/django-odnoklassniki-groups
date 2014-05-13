@@ -72,7 +72,7 @@ class OdnoklassnikiGroupsTest(TestCase):
         self.assertEqual(instance.name, u'Группа для тестирования нового сервиса')
         self.assertEqual(instance.description, u'Группа для тестирования нового сервиса')
         self.assertEqual(instance.shortname, 'newservicetesting')
-        self.assertEqual(instance.pic_avatar, 'http://groupava2.odnoklassniki.ru/getImage?photoId=476991575825&photoType=4')
+        self.assertEqual(instance.pic50x50, 'http://groupava2.odnoklassniki.ru/getImage?photoId=476991575825&photoType=4')
         self.assertEqual(instance.shop_visible_admin, False)
         self.assertEqual(instance.shop_visible_public, False)
         self.assertEqual(instance.members_count, 12463)
@@ -105,7 +105,7 @@ class OdnoklassnikiGroupsTest(TestCase):
 
             users = group.update_users()
 
-            self.assertTrue(group.members_count > 1100)
+            self.assertTrue(group.members_count > 2200)
             self.assertEqual(group.members_count, User.objects.count())
             self.assertEqual(group.members_count, users.count())
             self.assertEqual(group.members_count, group.users.count())

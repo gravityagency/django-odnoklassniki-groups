@@ -84,9 +84,11 @@ class Group(OdnoklassnikiPKModel):
             response.update(response.pop('main_photo'))
 
         # pop avatar, because self.pic50x50 the same
-        response.pop('picAvatar', None)
+        if 'picAvatar' in response:
+            response['pic50x50'] = response.pop('picAvatar')
 
         super(Group, self).parse(response)
+
 
 '''
 Fields, dependent on other applications
@@ -98,16 +100,17 @@ def get_improperly_configured_field(app_name, decorate_property=False):
         field = property(field)
     return field
 
+
 if 'odnoklassniki_users' in settings.INSTALLED_APPS:
     from odnoklassniki_users.models import User
     from m2m_history.fields import ManyToManyHistoryField
     users = ManyToManyHistoryField(User, cache=True)
 
     @atomic
-    @opt_generator
+#    @opt_generator
     def update_users(self, **kwargs):
         ids = self.__class__.remote.get_members_ids(group=self)
-
+        # TODO: remove time_from of first updating
 #        initial = self.users.count() == 0
 
         self.users = User.remote.fetch(ids=ids)
@@ -119,6 +122,7 @@ if 'odnoklassniki_users' in settings.INSTALLED_APPS:
 else:
     users = get_improperly_configured_field('odnoklassniki_users', True)
     update_users = users
+
 
 if 'odnoklassniki_discussions' in settings.INSTALLED_APPS:
     from odnoklassniki_discussions.models import Discussion
@@ -132,8 +136,25 @@ else:
     discussions_count = discussions
     fetch_discussions = discussions
 
+
+if 'odnoklassniki_photos' in settings.INSTALLED_APPS:
+    from odnoklassniki_photos.models import Album
+    albums = generic.GenericRelation(Album, content_type_field='owner_content_type', object_id_field='owner_id')
+    albums_count = models.PositiveIntegerField(null=True)
+
+    def fetch_albums(self, **kwargs):
+        return Album.remote.fetch(group=self, **kwargs)
+else:
+    albums = get_improperly_configured_field('odnoklassniki_photos', True)
+    albums_count = albums
+    fetch_albums = albums
+
+
 Group.add_to_class('users', users)
 Group.add_to_class('update_users', update_users)
 Group.add_to_class('discussions', discussions)
 Group.add_to_class('discussions_count', discussions_count)
+Group.add_to_class('albums', albums)
+Group.add_to_class('albums_count', albums_count)
 Group.add_to_class('fetch_discussions', fetch_discussions)
+Group.add_to_class('fetch_albums', fetch_albums)
