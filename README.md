@@ -22,6 +22,7 @@ Django Odnoklassniki Groups
 
     # oauth-tokens settings
     OAUTH_TOKENS_HISTORY = True                                             # to keep in DB expired access tokens
+    OAUTH_TOKENS_ODNOKLASSNIKI_CLIENT_ID = 12345678                         # application id
     OAUTH_TOKENS_ODNOKLASSNIKI_CLIENT_PUBLIC = ''                           # application public key
     OAUTH_TOKENS_ODNOKLASSNIKI_CLIENT_SECRET = ''                           # application secret key
     OAUTH_TOKENS_ODNOKLASSNIKI_SCOPE = ['']                                 # application scopes
@@ -32,7 +33,7 @@ Django Odnoklassniki Groups
 --------------------
 
 * [group.getInfo](http://apiok.ru/wiki/display/api/group.getInfo) – получение информации о группах;
-* [group.getInfo](http://apiok.ru/wiki/display/api/group.getMembers) – получение списка пользователей группы;
+* [group.getMembers](http://apiok.ru/wiki/display/api/group.getMembers) – получение списка пользователей группы;
 
 Примеры использования
 ---------------------
