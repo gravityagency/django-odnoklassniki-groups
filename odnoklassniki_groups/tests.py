@@ -102,6 +102,7 @@ class OdnoklassnikiGroupsTest(TestCase):
             group = GroupFactory(id=GROUP_OPEN_ID)
 
             self.assertEqual(User.objects.count(), 0)
+            self.assertEqual(group.users.versions.count(), 0)
 
             users = group.update_users()
 
@@ -109,3 +110,10 @@ class OdnoklassnikiGroupsTest(TestCase):
             self.assertEqual(group.members_count, User.objects.count())
             self.assertEqual(group.members_count, users.count())
             self.assertEqual(group.members_count, group.users.count())
+
+            self.assertEqual(group.users.versions.count(), 1)
+
+            version = group.users.versions.all()[0]
+
+            self.assertEqual(version.added_count, 0)
+            self.assertEqual(version.removed_count, 0)
