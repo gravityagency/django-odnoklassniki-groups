@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-from django.test import TestCase
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from models import Group
-from factories import GroupFactory
+from django.test import TestCase
 import simplejson as json
+
+from .factories import GroupFactory
+from .models import Group
 
 GROUP_ID = 47241470410797
 GROUP_NAME = u'Кока-Кола'
 
 GROUP_OPEN_ID = 53038939046008
+
 
 class OdnoklassnikiGroupsTest(TestCase):
 
@@ -72,7 +74,8 @@ class OdnoklassnikiGroupsTest(TestCase):
         self.assertEqual(instance.name, u'Группа для тестирования нового сервиса')
         self.assertEqual(instance.description, u'Группа для тестирования нового сервиса')
         self.assertEqual(instance.shortname, 'newservicetesting')
-        self.assertEqual(instance.pic50x50, 'http://groupava2.odnoklassniki.ru/getImage?photoId=476991575825&photoType=4')
+        self.assertEqual(
+            instance.pic50x50, 'http://groupava2.odnoklassniki.ru/getImage?photoId=476991575825&photoType=4')
         self.assertEqual(instance.shop_visible_admin, False)
         self.assertEqual(instance.shop_visible_public, False)
         self.assertEqual(instance.members_count, 12463)

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-from django.db import models
+import logging
+
 from django.conf import settings
-from django.utils.translation import ugettext as _
-from django.core.exceptions import ImproperlyConfigured
 from django.contrib.contenttypes import generic
-from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
+from django.core.exceptions import ImproperlyConfigured
+from django.db import models
+from django.utils.translation import ugettext as _
 from odnoklassniki_api.decorators import fetch_all, atomic, opt_generator
 from odnoklassniki_api.fields import JSONField
-import logging
+from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
+
 
 log = logging.getLogger('odnoklassniki_groups')
 
@@ -36,6 +38,7 @@ class GroupRemoteManager(OdnoklassnikiManager):
 
 
 class Group(OdnoklassnikiPKModel):
+
     class Meta:
         verbose_name = _('Odnoklassniki group')
         verbose_name_plural = _('Odnoklassniki groups')
@@ -93,6 +96,8 @@ class Group(OdnoklassnikiPKModel):
 '''
 Fields, dependent on other applications
 '''
+
+
 def get_improperly_configured_field(app_name, decorate_property=False):
     def field(self):
         raise ImproperlyConfigured("Application '%s' not in INSTALLED_APPS" % app_name)
@@ -126,11 +131,12 @@ else:
 
 if 'odnoklassniki_discussions' in settings.INSTALLED_APPS:
     from odnoklassniki_discussions.models import Discussion
-    discussions = generic.GenericRelation(Discussion, content_type_field='owner_content_type', object_id_field='owner_id')
+    discussions = generic.GenericRelation(
+        Discussion, content_type_field='owner_content_type', object_id_field='owner_id')
     discussions_count = models.PositiveIntegerField(null=True)
 
     def fetch_discussions(self, **kwargs):
-        return Discussion.remote.fetch(group=self, **kwargs)
+        return Discussion.remote.fetch_group(group=self, **kwargs)
 else:
     discussions = get_improperly_configured_field('odnoklassniki_discussions', True)
     discussions_count = discussions
