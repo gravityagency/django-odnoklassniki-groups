@@ -48,6 +48,7 @@ class PhotosModelMixin(models.Model):
         albums_count = models.PositiveIntegerField(null=True)
 
         def fetch_albums(self, **kwargs):
+            from odnoklassniki_photos.models import Album
             return Album.remote.fetch(group=self, **kwargs)
     else:
         albums = get_improperly_configured_field('odnoklassniki_photos', True)
@@ -67,6 +68,7 @@ class DiscussionsModelMixin(models.Model):
         discussions_count = models.PositiveIntegerField(null=True)
 
         def fetch_discussions(self, **kwargs):
+            from odnoklassniki_discussions.models import Discussion
             return Discussion.remote.fetch_group(group=self, **kwargs)
     else:
         discussions = get_improperly_configured_field('odnoklassniki_discussions', True)
