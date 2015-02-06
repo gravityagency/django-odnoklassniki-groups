@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import mock
+import simplejson as json
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
-import simplejson as json
+from odnoklassniki_users.tests import user_fetch_mock
 
 from .factories import GroupFactory
 from .models import Group
@@ -94,12 +96,12 @@ class OdnoklassnikiGroupsTest(TestCase):
         group = GroupFactory(id=GROUP_OPEN_ID)
         ids = Group.remote.get_members_ids(group=group)
 
-        self.assertTrue(group.members_count > 1100)
-        self.assertEqual(group.members_count, len(ids))
+        self.assertGreater(len(ids), 18000)
 
     if 'odnoklassniki_users' in settings.INSTALLED_APPS:
 
-        def test_fetch_group_members(self):
+        @mock.patch('odnoklassniki_api.models.OdnoklassnikiManager.fetch', side_effect=user_fetch_mock)
+        def test_fetch_group_members(self, fetch):
             from odnoklassniki_users.models import User
 
             group = GroupFactory(id=GROUP_OPEN_ID)
@@ -109,7 +111,7 @@ class OdnoklassnikiGroupsTest(TestCase):
 
             users = group.update_users()
 
-            self.assertTrue(group.members_count > 2200)
+            self.assertGreater(group.members_count, 18000)
             self.assertEqual(group.members_count, User.objects.count())
             self.assertEqual(group.members_count, users.count())
             self.assertEqual(group.members_count, group.users.count())
