@@ -13,7 +13,7 @@ class UsersModelMixin(models.Model):
 
     if 'odnoklassniki_users' in settings.INSTALLED_APPS:
         from odnoklassniki_users.models import User
-        users = ManyToManyHistoryField(User, cache=True)
+        users = ManyToManyHistoryField(User, versions=True)
 
         @atomic
         # @opt_generator
