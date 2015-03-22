@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.db import models
 from m2m_history.fields import ManyToManyHistoryField
-from odnoklassniki_api.decorators import atomic, fetch_all, opt_generator
+from odnoklassniki_api.decorators import atomic
 from odnoklassniki_api.utils import get_improperly_configured_field
 
 
@@ -16,14 +16,14 @@ class UsersModelMixin(models.Model):
         users = ManyToManyHistoryField(User, versions=True)
 
         @atomic
-        # @opt_generator
-        def update_users(self, **kwargs):
-            from odnoklassniki_users.models import User
+        def update_users(self, *args, **kwargs):
+
             ids = self.__class__.remote.get_members_ids(group=self)
             first = self.users.versions.count() == 0
 
-            self.users = User.remote.fetch(ids=ids)
+            self.users = ids
 
+            # update members_count
             self.members_count = len(ids)
             self.save()
 
@@ -31,7 +31,7 @@ class UsersModelMixin(models.Model):
                 self.users.get_query_set_through().update(time_from=None)
                 self.users.versions.update(added_count=0)
 
-            return self.users.all()
+            return True
     else:
         users = get_improperly_configured_field('odnoklassniki_users', True)
         update_users = get_improperly_configured_field('odnoklassniki_users')

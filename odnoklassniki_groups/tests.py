@@ -101,6 +101,29 @@ class OdnoklassnikiGroupsTest(TestCase):
     if 'odnoklassniki_users' in settings.INSTALLED_APPS:
 
         @mock.patch('odnoklassniki_api.models.OdnoklassnikiManager.fetch', side_effect=user_fetch_mock)
+        def test_group_add_members_ids_not_users(self, fetch):
+            '''
+            Without vkontakte_users in apps fetching group members doesn't trigger fetching users
+            :param fetch:
+            :return:
+            '''
+            apps = list(settings.INSTALLED_APPS)
+            del apps[apps.index('odnoklassniki_users')]
+
+            from odnoklassniki_users.models import User
+            User.remote.fetch(ids=range(0, 500))
+
+            group = GroupFactory(id=GROUP_OPEN_ID)
+            with self.settings(**dict(INSTALLED_APPS=apps)):
+                group.users = range(0, 1000)
+
+            self.assertEqual(group.users.count(), 500)
+            self.assertEqual(group.users.get_queryset().count(), 500)
+            self.assertEqual(group.users.get_queryset_through().count(), 1000)
+            self.assertItemsEqual(group.users.all(), User.objects.all())
+            self.assertItemsEqual(group.users.get_queryset(only_pk=True), range(0, 1000))
+
+        @mock.patch('odnoklassniki_users.models.UserRemoteManager.fetch', side_effect=user_fetch_mock)
         def test_fetch_group_members(self, fetch):
             from odnoklassniki_users.models import User
 
@@ -109,11 +132,11 @@ class OdnoklassnikiGroupsTest(TestCase):
             self.assertEqual(User.objects.count(), 0)
             self.assertEqual(group.users.versions.count(), 0)
 
-            users = group.update_users()
+            with self.settings(**dict(ODNOKLASSNIKI_USERS_FETCH_USERS_ASYNC=False)):
+                group.update_users()
 
             self.assertGreater(group.members_count, 18000)
             self.assertEqual(group.members_count, User.objects.count())
-            self.assertEqual(group.members_count, users.count())
             self.assertEqual(group.members_count, group.users.count())
 
             self.assertEqual(group.users.versions.count(), 1)

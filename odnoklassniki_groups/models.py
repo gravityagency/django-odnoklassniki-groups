@@ -86,3 +86,5 @@ class Group(DiscussionsModelMixin, PhotosModelMixin, UsersModelMixin, Odnoklassn
             response['pic50x50'] = response.pop('picAvatar')
 
         super(Group, self).parse(response)
+
+from . import signals
