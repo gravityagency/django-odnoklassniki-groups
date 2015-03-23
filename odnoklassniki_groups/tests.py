@@ -13,6 +13,7 @@ GROUP_ID = 47241470410797
 GROUP_NAME = u'Кока-Кола'
 
 GROUP_OPEN_ID = 53038939046008
+GROUP1_ID = 51745210433673
 
 
 class OdnoklassnikiGroupsTest(TestCase):
@@ -100,7 +101,7 @@ class OdnoklassnikiGroupsTest(TestCase):
 
     if 'odnoklassniki_users' in settings.INSTALLED_APPS:
 
-        @mock.patch('odnoklassniki_api.models.OdnoklassnikiManager.fetch', side_effect=user_fetch_mock)
+        @mock.patch('odnoklassniki_users.models.UserRemoteManager.fetch', side_effect=user_fetch_mock)
         def test_group_add_members_ids_not_users(self, fetch):
             '''
             Without vkontakte_users in apps fetching group members doesn't trigger fetching users
@@ -113,7 +114,7 @@ class OdnoklassnikiGroupsTest(TestCase):
             from odnoklassniki_users.models import User
             User.remote.fetch(ids=range(0, 500))
 
-            group = GroupFactory(id=GROUP_OPEN_ID)
+            group = GroupFactory(id=GROUP1_ID)
             with self.settings(**dict(INSTALLED_APPS=apps)):
                 group.users = range(0, 1000)
 
@@ -127,7 +128,7 @@ class OdnoklassnikiGroupsTest(TestCase):
         def test_fetch_group_members(self, fetch):
             from odnoklassniki_users.models import User
 
-            group = GroupFactory(id=GROUP_OPEN_ID)
+            group = GroupFactory(id=GROUP1_ID)
 
             self.assertEqual(User.objects.count(), 0)
             self.assertEqual(group.users.versions.count(), 0)
@@ -135,7 +136,7 @@ class OdnoklassnikiGroupsTest(TestCase):
             with self.settings(**dict(ODNOKLASSNIKI_USERS_FETCH_USERS_ASYNC=False)):
                 group.update_users()
 
-            self.assertGreater(group.members_count, 18000)
+            self.assertGreater(group.members_count, 4000)
             self.assertEqual(group.members_count, User.objects.count())
             self.assertEqual(group.members_count, group.users.count())
 
