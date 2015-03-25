@@ -19,15 +19,17 @@ class UsersModelMixin(models.Model):
         def update_users(self, *args, **kwargs):
 
             ids = self.__class__.remote.get_members_ids(group=self)
-            first = self.users.versions.count() == 0
+            count = len(ids)
+            initial = self.users.versions.count() == 0
 
-            self.users = ids
+            self.users = map(int, ids)
 
             # update members_count
-            self.members_count = len(ids)
-            self.save()
+            if self.members_count != count:
+                self.members_count = count
+                self.save()
 
-            if first:
+            if initial:
                 self.users.get_query_set_through().update(time_from=None)
                 self.users.versions.update(added_count=0)
 
