@@ -146,3 +146,169 @@ class OdnoklassnikiGroupsTest(TestCase):
 
             self.assertEqual(version.added_count, 0)
             self.assertEqual(version.removed_count, 0)
+
+        @mock.patch('odnoklassniki_groups.models.GroupRemoteManager.get_members_ids')
+        def test_group_members_changes(self, get_members_ids):
+
+            apps = list(settings.INSTALLED_APPS)
+            del apps[apps.index('odnoklassniki_users')]
+            with self.settings(**dict(INSTALLED_APPS=apps)):
+
+                group = GroupFactory(id=GROUP1_ID)
+
+                def membership(id):
+                    return group.users.get_queryset_through().get(user_id=id)
+
+                def memberships(id):
+                    return group.users.get_queryset_through().filter(user_id=id).order_by('id')
+
+                def id90_state1():
+                    self.assertEqual(membership(90).time_from, None)
+                    self.assertEqual(membership(90).time_to, None)
+
+                def id90_state2():
+                    versions = group.users.versions.all()
+                    self.assertEqual(membership(90).time_from, None)
+                    self.assertEqual(membership(90).time_to, versions[1].time)
+
+                def id90_state3():
+                    versions = group.users.versions.all()
+                    self.assertEqual(memberships(90)[0].time_from, None)
+                    self.assertEqual(memberships(90)[0].time_to, versions[1].time)
+                    self.assertEqual(memberships(90)[1].time_from, versions[2].time)
+                    self.assertEqual(memberships(90)[1].time_to, None)
+
+                def id90_state4():
+                    versions = group.users.versions.all()
+                    self.assertEqual(memberships(90)[0].time_from, None)
+                    self.assertEqual(memberships(90)[0].time_to, versions[1].time)
+                    self.assertEqual(memberships(90)[1].time_from, versions[2].time)
+                    self.assertEqual(memberships(90)[1].time_to, None)
+
+                def id0_state1():
+                    self.assertEqual(memberships(0).count(), 0)
+
+                def id0_state2():
+                    versions = group.users.versions.all()
+                    self.assertEqual(membership(0).time_from, versions[1].time)
+                    self.assertEqual(membership(0).time_to, None)
+
+                def id0_state3():
+                    versions = group.users.versions.all()
+                    self.assertEqual(membership(0).time_from, versions[1].time)
+                    self.assertEqual(membership(0).time_to, versions[2].time)
+
+                id0_state4 = id0_state3
+
+                def id20_state1():
+                    self.assertEqual(memberships(20).count(), 0)
+
+                def id20_state2():
+                    versions = group.users.versions.all()
+                    self.assertEqual(membership(20).time_from, versions[1].time)
+                    self.assertEqual(membership(20).time_to, None)
+
+                def id20_state3():
+                    versions = group.users.versions.all()
+                    self.assertEqual(membership(20).time_from, versions[1].time)
+                    self.assertEqual(membership(20).time_to, versions[2].time)
+
+                def id20_state4():
+                    versions = group.users.versions.all()
+                    self.assertEqual(memberships(20)[0].time_from, versions[1].time)
+                    self.assertEqual(memberships(20)[0].time_to, versions[2].time)
+                    self.assertEqual(memberships(20)[1].time_from, versions[3].time)
+                    self.assertEqual(memberships(20)[1].time_to, None)
+
+                def id40_state1():
+                    self.assertEqual(membership(40).time_from, None)
+                    self.assertEqual(membership(40).time_to, None)
+
+                id40_state2 = id40_state1
+
+                def id40_state3():
+                    self.assertEqual(membership(40).time_from, None)
+                    self.assertEqual(membership(40).time_to, None)
+
+                id40_state4 = id40_state3
+
+                def id105_state1():
+                    self.assertEqual(memberships(105).count(), 0)
+
+                id105_state2 = id105_state1
+
+                def id105_state3():
+                    versions = group.users.versions.all()
+                    self.assertEqual(membership(105).time_from, versions[2].time)
+                    self.assertEqual(membership(105).time_to, None)
+
+                def id105_state4():
+                    versions = group.users.versions.all()
+                    self.assertEqual(membership(105).time_from, versions[2].time)
+                    self.assertEqual(membership(105).time_to, versions[3].time)
+
+                get_members_ids.side_effect = lambda group: map(str, range(30, 100))
+                group.update_users(check_count=False)
+                self.assertEqual(group.users.get_queryset_through().count(), 70)
+                id0_state1()
+                id20_state1()
+                id40_state1()
+                id90_state1()
+                id105_state1()
+
+                get_members_ids.side_effect = lambda group: map(str, range(0, 50))
+                group.update_users(check_count=False)
+                state_time2 = group.users.last_update_time()
+                self.assertEqual(group.users.get_queryset_through().count(), 100)
+                id0_state2()
+                id20_state2()
+                id40_state2()
+                id90_state2()
+                id105_state2()
+
+                get_members_ids.side_effect = lambda group: map(str, range(30, 110))
+                group.update_users(check_count=False)
+                state_time3 = group.users.last_update_time()
+                self.assertEqual(group.users.get_queryset_through().count(), 160)
+                id0_state3()
+                id20_state3()
+                id40_state3()
+                id90_state3()
+                id105_state3()
+
+                get_members_ids.side_effect = lambda group: map(str, range(15, 100))
+                group.update_users(check_count=False)
+                state_time4 = group.users.last_update_time()
+                self.assertEqual(group.users.get_queryset_through().count(), 175)
+                id0_state4()
+                id20_state4()
+                id40_state4()
+                id90_state4()
+                id105_state4()
+
+                # hide migration3
+                group.users.versions.get(time=state_time3).delete()
+                self.assertEqual(group.users.get_queryset_through().count(), 150)
+                id0_state4()
+                id20_state2()
+                id40_state2()
+                id90_state4()
+                id105_state2()
+
+                # hide migration4 -> back to state2
+                group.users.versions.get(time=state_time4).delete()
+                self.assertEqual(group.users.get_queryset_through().count(), 100)
+                id0_state2()
+                id20_state2()
+                id40_state2()
+                id90_state2()
+                id105_state2()
+
+                # hide migration2 -> back to state1
+                group.users.versions.get(time=state_time2).delete()
+                self.assertEqual(group.users.get_queryset_through().count(), 70)
+                id0_state1()
+                id20_state1()
+                id40_state1()
+                id90_state1()
+                id105_state1()
