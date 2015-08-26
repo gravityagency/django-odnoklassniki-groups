@@ -33,7 +33,7 @@ class UsersModelMixin(models.Model):
                 self.users.get_query_set_through().update(time_from=None)
                 self.users.versions.update(added_count=0)
 
-            return True
+            return self.users
     else:
         users = get_improperly_configured_field('odnoklassniki_users', True)
         update_users = get_improperly_configured_field('odnoklassniki_users')
