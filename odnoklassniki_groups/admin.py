@@ -12,7 +12,7 @@ class GroupAdmin(OdnoklassnikiModelAdmin):
     image_preview.short_description = u'Картинка'
     image_preview.allow_tags = True
 
-    search_fields = ('name',)
+    search_fields = ('name', 'shortname')
     list_display = ('image_preview','name','shortname','ok_link','premium')
     list_display_links = ('name','shortname')
     list_filter = ('premium', 'private', 'shop_visible_admin', 'shop_visible_public')
